@@ -1,14 +1,16 @@
 <div align="center">
-<img src="./docs/_static/facil_logo.png" width="100px">
 
-# Framework for Analysis of Class-Incremental Learning
+#Disentanglement of Color and Shape for CL using the Framework for Analysis of Class-Incremental Learning (FACIL)
 
 ---
 
 <p align="center">
+  <a href="#disentanglement-implementation">Disentanglement CL-ICML</a> •
+  <a href="#example-execution-scripts">What is FACIL</a> •
   <a href="#what-is-facil">What is FACIL</a> •
   <a href="#key-features">Key Features</a> •
-  <a href="#how-to-use">How To Use</a> •
+  <a href="#simple-installation-with-conda">Simple installation with conda</a> •
+  <a href="#how-to-use-facil">How To Use FACIL</a> •
   <a href="src/approach#approaches-1">Approaches</a> •
   <a href="src/datasets#datasets">Datasets</a> •
   <a href="src/networks#networks">Networks</a> •
@@ -18,6 +20,47 @@
 </div>
 
 ---
+## Disentanglement Implementation
+CL-ICML paper:
+_**Disentanglement of Color and Shape Representations for Continual Learning**_  
+*David Berga, Marc Masana, Joost van de Weijer*  
+([arxiv](https://arxiv.org/abs/2007.06356))
+
+## Example execution scripts
+
+See all script commands in scripts/jobs_10tasks.sh
+Run different designs with lr 0.05, 0.005, 0.0005 with the following commands:
+
+ResNet18-DS
+```
+python3 main_incremental.py --exp_name resnet18ds_finetune_lr005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design design7 --heads_architecture design7 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.05 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18ds_finetune_lr0005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design design7 --heads_architecture design7 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18ds_finetune_lr00005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design design7 --heads_architecture design7 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.0005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+```
+ResNet18
+```
+python3 main_incremental.py --exp_name resnet18_finetune_lr005_bs32 --datasets birds --num_tasks 10 --network resnet18 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.05 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18_finetune_lr0005_bs32 --datasets birds --num_tasks 10 --network resnet18 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18_finetune_lr00005_bs32 --datasets birds --num_tasks 10 --network resnet18 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.0005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+```
+ResNet18-H
+```
+python3 main_incremental.py --exp_name resnet18_finetune_lr005_bs32 --datasets birds --num_tasks 10 --network resnet18 --heads_architecture design7 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.05 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18_finetune_lr0005_bs32 --datasets birds --num_tasks 10 --network resnet18 --heads_architecture design7  --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18_finetune_lr00005_bs32 --datasets birds --num_tasks 10 --network resnet18 --heads_architecture design7 --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.0005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+```
+ResNet18-Shape
+```
+python3 main_incremental.py --exp_name resnet18shape_finetune_lr005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design shapeonly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.05 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18shape_finetune_lr0005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design shapeonly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18shape_finetune_lr00005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design shapeonly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.0005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+```
+ResNet18-Color
+```
+python3 main_incremental.py --exp_name resnet18color_finetune_lr005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design coloronly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.05 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18color_finetune_lr0005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design coloronly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+python3 main_incremental.py --exp_name resnet18color_finetune_lr00005_bs32 --datasets birds --num_tasks 10 --network disentangle --disentangle_design coloronly --nepochs 200 --batch_size 32 --results_path data/experiments/10tasks_birds/ --lr 0.0005 --lr_factor 3 --lr_patience 15 --lr_min 1e-6 --momentum 0.9 --weight_decay 0.0002 --approach finetune --gpu=0 ;
+```
 
 ## What is FACIL
 FACIL started as code for the paper:  
@@ -50,7 +93,16 @@ Current available approaches include:
 </b></p>
 </div>
 
-## How To Use
+
+## Simple installation with conda
+
+Run this with miniconda
+```
+conda create -n deepenv python=3.5
+conda install -n deepenv pytorch torchvision python-graphviz matplotlib numpy scipy intel-openmp mkl cudatoolkit=9.2 -c pytorch
+conda activate deepenv
+
+## How To Use FACIL
 Clone this github repository:
 ```
 git clone https://github.com/mmasana/FACIL.git
@@ -92,22 +144,13 @@ python3 -u src/main_incremental.py
 More options are explained in the [`src`](./src), including GridSearch usage. Also, more specific options on approaches,
 loggers, datasets and networks.
 
-### Scripts
-We provide scripts to reproduce the specific scenarios proposed in 
-_**Class-incremental learning: survey and performance evaluation**_:
-
-* CIFAR-100 (10 tasks) with ResNet-32 without exemplars
-* CIFAR-100 (10 tasks) with ResNet-32 with fixed and growing memory
-* _MORE COMING SOON..._
-
-All scripts run 10 times to later calculate mean and standard deviation of the results.
-Check out all available in the [scripts](scripts) folder.
 
 ## License
 Please check the MIT license that is listed in this repository.
 
 ## Cite
-If you want to cite the framework feel free to use this preprint citation while we await publication:
+If you want to cite the framework / code feel free to use this preprint citations:
+
 ```bibtex
 @article{masana2020class,
   title={Class-incremental learning: survey and performance evaluation},
@@ -115,7 +158,15 @@ If you want to cite the framework feel free to use this preprint citation while 
   journal={arXiv preprint arXiv:2010.15277},
   year={2020}
 }
+@article{berga2020disentanglement,
+  title={Class-incremental learning: survey and performance evaluation},
+  author={Berga, David and Masana, Marc and van de Weijer, Joost},
+  journal={arXiv preprint arXiv:2007.06356},
+  year={2020}
+}
 ```
+*Note: this implementation of Disentanglement is using an outdated version of FACIL, please check latest updates in the original [repo](https://github.com/mmasana/FACIL)
+
 
 ---
 

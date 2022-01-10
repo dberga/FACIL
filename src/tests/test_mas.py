@@ -1,25 +1,12 @@
-from tests import run_main_and_assert
+from tests import run_main
 
-FAST_LOCAL_TEST_ARGS = "--exp-name local_test --datasets mnist" \
-                       " --network LeNet --num-tasks 3 --seed 1 --batch-size 32" \
+FAST_LOCAL_TEST_ARGS = "--exp_name local_test --datasets mnist" \
+                       " --network LeNet --num_tasks 3 --seed 1 --batch_size 32" \
+                       " --results_path ../results/" \
                        " --nepochs 3" \
-                       " --num-workers 0" \
+                       " --num_workers 0" \
                        " --approach mas"
 
 
 def test_mas_without_exemplars():
-    run_main_and_assert(FAST_LOCAL_TEST_ARGS)
-
-
-def test_mas_with_exemplars():
-    args_line = FAST_LOCAL_TEST_ARGS
-    args_line += " --num-exemplars 200"
-    run_main_and_assert(args_line)
-
-
-def test_mas_with_warmup():
-    args_line = FAST_LOCAL_TEST_ARGS
-    args_line += " --warmup-nepochs 5"
-    args_line += " --warmup-lr-factor 0.5"
-    args_line += " --num-exemplars 200"
-    run_main_and_assert(args_line)
+    run_main(FAST_LOCAL_TEST_ARGS)

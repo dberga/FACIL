@@ -13,8 +13,6 @@ from networks.network import LLL_Net
 
 
 class ExemplarsSelector:
-    """Exemplar selector for approaches with an interface of Dataset"""
-
     def __init__(self, exemplars_dataset: ExemplarsDataset):
         self.exemplars_dataset = exemplars_dataset
 
@@ -29,14 +27,15 @@ class ExemplarsSelector:
         with override_dataset_transform(trn_loader.dataset, Lambda(lambda x: np.array(x))) as ds_for_raw:
             x, y = zip(*(ds_for_raw[idx] for idx in selected_indices))
         clock1 = time.time()
-        print('| Selected {:d} train exemplars, time={:5.1f}s'.format(len(x), clock1 - clock0))
+        print('| Selected {:d} train exemplars, time={:5.1f}s'.format(
+            len(x), clock1 - clock0))
         return x, y
 
     def _exemplars_per_class_num(self, model: LLL_Net):
         if self.exemplars_dataset.max_num_exemplars_per_class:
             return self.exemplars_dataset.max_num_exemplars_per_class
 
-        num_cls = model.task_cls.sum().item()
+        num_cls = sum(model.task_cls)
         num_exemplars = self.exemplars_dataset.max_num_exemplars
         exemplars_per_class = int(np.ceil(num_exemplars / num_cls))
         assert exemplars_per_class > 0, \
@@ -51,8 +50,6 @@ class ExemplarsSelector:
 
 
 class RandomExemplarsSelector(ExemplarsSelector):
-    """Selection of new samples. This is based on random selection, which produces a random list of samples."""
-
     def __init__(self, exemplars_dataset):
         super().__init__(exemplars_dataset)
 
@@ -83,22 +80,24 @@ class RandomExemplarsSelector(ExemplarsSelector):
 
 
 class HerdingExemplarsSelector(ExemplarsSelector):
-    """Selection of new samples. This is based on herding selection, which produces a sorted list of samples of one
-    class based on the distance to the mean sample of that class. From iCaRL algorithm 4 and 5:
-    https://openaccess.thecvf.com/content_cvpr_2017/papers/Rebuffi_iCaRL_Incremental_Classifier_CVPR_2017_paper.pdf
     """
+    "Selection of new samples. This is based on herding selection,
+     which produces a sorted list of samples of one class based on
+     the distance to the mean sample of that class." (page 5)
+    """
+
     def __init__(self, exemplars_dataset):
         super().__init__(exemplars_dataset)
 
-    def _select_indices(self, model: LLL_Net, sel_loader: DataLoader, exemplars_per_class: int, transform) -> Iterable:
+    def _select_indices(self, model: LLL_Net, ex_sel_loader: DataLoader, exemplars_per_class: int,
+                        transform) -> Iterable:
         model_device = next(model.parameters()).device  # we assume here that whole model is on a single device
-
         # extract outputs from the model for all train samples
         extracted_features = []
         extracted_targets = []
         with torch.no_grad():
             model.eval()
-            for images, targets in sel_loader:
+            for images, targets in ex_sel_loader:
                 feats = model(images.to(model_device), return_features=True)[1]
                 feats = feats / feats.norm(dim=1).view(-1, 1)  # Feature normalization
                 extracted_features.append(feats)
@@ -110,8 +109,10 @@ class HerdingExemplarsSelector(ExemplarsSelector):
         for curr_cls in np.unique(extracted_targets):
             # get all indices from current class
             cls_ind = np.where(extracted_targets == curr_cls)[0]
-            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(curr_cls)
-            assert (exemplars_per_class <= len(cls_ind)), "Not enough samples to store"
+            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(
+                curr_cls)
+            assert (exemplars_per_class <= len(cls_ind)
+                    ), "Not enough samples to store"
             # get all extracted features for current class
             cls_feats = extracted_features[cls_ind]
             # calculate the mean
@@ -141,52 +142,17 @@ class HerdingExemplarsSelector(ExemplarsSelector):
 
 
 class EntropyExemplarsSelector(ExemplarsSelector):
-    """Selection of new samples. This is based on entropy selection, which produces a sorted list of samples of one
-    class based on entropy of each sample. From RWalk http://arxiv-export-lb.library.cornell.edu/pdf/1801.10112
     """
+    "Selection of new samples. This is based on entropy selection,
+    from http://arxiv-export-lb.library.cornell.edu/pdf/1801.10112
+     which produces a sorted list of samples of one class based on
+     entropy of each sample." 
+    """
+
     def __init__(self, exemplars_dataset):
         super().__init__(exemplars_dataset)
 
-    def _select_indices(self, model: LLL_Net, sel_loader: DataLoader, exemplars_per_class: int, transform) -> Iterable:
-        model_device = next(model.parameters()).device  # we assume here that whole model is on a single device
-
-        # extract outputs from the model for all train samples
-        extracted_logits = []
-        extracted_targets = []
-        with torch.no_grad():
-            model.eval()
-            for images, targets in sel_loader:
-                extracted_logits.append(torch.cat(model(images.to(model_device)), dim=1))
-                extracted_targets.extend(targets)
-        extracted_logits = (torch.cat(extracted_logits)).cpu()
-        extracted_targets = np.array(extracted_targets)
-        result = []
-        # iterate through all classes
-        for curr_cls in np.unique(extracted_targets):
-            # get all indices from current class
-            cls_ind = np.where(extracted_targets == curr_cls)[0]
-            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(curr_cls)
-            assert (exemplars_per_class <= len(cls_ind)), "Not enough samples to store"
-            # get all extracted features for current class
-            cls_logits = extracted_logits[cls_ind]
-            # select the exemplars with higher entropy (lower: -entropy)
-            probs = torch.softmax(cls_logits, dim=1)
-            log_probs = torch.log(probs)
-            minus_entropy = (probs * log_probs).sum(1)  # change sign of this variable for inverse order
-            selected = cls_ind[minus_entropy.sort()[1][:exemplars_per_class]]
-            result.extend(selected)
-        return result
-    
-    
-class DistanceExemplarsSelector(ExemplarsSelector):
-    """Selection of new samples. This is based on distance-based selection, which produces a sorted list of samples of
-    one class based on closeness to decision boundary of each sample. From RWalk
-    http://arxiv-export-lb.library.cornell.edu/pdf/1801.10112
-    """
-    def __init__(self, exemplars_dataset):
-        super().__init__(exemplars_dataset)
-
-    def _select_indices(self, model: LLL_Net, sel_loader: DataLoader, exemplars_per_class: int,
+    def _select_indices(self, model: LLL_Net, ex_sel_loader: DataLoader, exemplars_per_class: int,
                         transform) -> Iterable:
         model_device = next(model.parameters()).device  # we assume here that whole model is on a single device
 
@@ -195,7 +161,7 @@ class DistanceExemplarsSelector(ExemplarsSelector):
         extracted_targets = []
         with torch.no_grad():
             model.eval()
-            for images, targets in sel_loader:
+            for images, targets in ex_sel_loader:
                 extracted_logits.append(torch.cat(model(images.to(model_device)), dim=1))
                 extracted_targets.extend(targets)
         extracted_logits = (torch.cat(extracted_logits)).cpu()
@@ -205,12 +171,59 @@ class DistanceExemplarsSelector(ExemplarsSelector):
         for curr_cls in np.unique(extracted_targets):
             # get all indices from current class
             cls_ind = np.where(extracted_targets == curr_cls)[0]
-            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(curr_cls)
-            assert (exemplars_per_class <= len(cls_ind)), "Not enough samples to store"
+            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(
+                curr_cls)
+            assert (exemplars_per_class <= len(cls_ind)
+                    ), "Not enough samples to store"
             # get all extracted features for current class
             cls_logits = extracted_logits[cls_ind]
-            # select the exemplars closer to boundary
-            distance = cls_logits[:, curr_cls]  # change sign of this variable for inverse order
+            # select the exemplars with higher entropy (lower: -entropy)
+            probs = torch.softmax(cls_logits, dim=1)
+            log_probs = torch.log(probs)
+            minus_entropy = (probs * log_probs).sum(1)
+            selected = cls_ind[minus_entropy.sort()[1][:exemplars_per_class]]
+            result.extend(selected)
+        return result
+
+
+class DistanceExemplarsSelector(ExemplarsSelector):
+    """
+    "Selection of new samples. This is based on distance-based selection,
+    from http://arxiv-export-lb.library.cornell.edu/pdf/1801.10112
+     which produces a sorted list of samples of one class based on
+     entropy of each sample." 
+    """
+
+    def __init__(self, exemplars_dataset):
+        super().__init__(exemplars_dataset)
+
+    def _select_indices(self, model: LLL_Net, ex_sel_loader: DataLoader, exemplars_per_class: int,
+                        transform) -> Iterable:
+        model_device = next(model.parameters()).device  # we assume here that whole model is on a single device
+
+        # extract outputs from the model for all train samples
+        extracted_logits = []
+        extracted_targets = []
+        with torch.no_grad():
+            model.eval()
+            for images, targets in ex_sel_loader:
+                extracted_logits.append(torch.cat(model(images.to(model_device)), dim=1))
+                extracted_targets.extend(targets)
+        extracted_logits = (torch.cat(extracted_logits)).cpu()
+        extracted_targets = np.array(extracted_targets)
+        result = []
+        # iterate through all classes
+        for curr_cls in np.unique(extracted_targets):
+            # get all indices from current class
+            cls_ind = np.where(extracted_targets == curr_cls)[0]
+            assert (len(cls_ind) > 0), "No samples to choose from for class {:d}".format(
+                curr_cls)
+            assert (exemplars_per_class <= len(cls_ind)
+                    ), "Not enough samples to store"
+            # get all extracted features for current class
+            cls_logits = extracted_logits[cls_ind]
+            # select the exemplars closer to doundary 
+            distance = cls_logits[:, curr_cls]
             selected = cls_ind[distance.sort()[1][:exemplars_per_class]]
             result.extend(selected)
         return result

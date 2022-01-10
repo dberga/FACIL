@@ -1,11 +1,9 @@
-import os
 import importlib
+import os
 from datetime import datetime
 
 
 class ExperimentLogger:
-    """Main class for experiment logging"""
-
     def __init__(self, log_path, exp_name, begin_time=None):
         self.log_path = log_path
         self.exp_name = exp_name
@@ -21,10 +19,10 @@ class ExperimentLogger:
     def log_args(self, args):
         pass
 
-    def log_result(self, array, name, step):
+    def log_result(self, array, name):
         pass
-
-    def log_figure(self, name, iter, figure, curtime=None):
+   
+    def save_model(self, state_dict, task, prefix):
         pass
 
     def save_model(self, state_dict, task):
@@ -32,8 +30,6 @@ class ExperimentLogger:
 
 
 class MultiLogger(ExperimentLogger):
-    """This class allows to use multiple loggers"""
-
     def __init__(self, log_path, exp_name, loggers=None, save_models=True):
         super(MultiLogger, self).__init__(log_path, exp_name)
         if os.path.exists(self.exp_path):
@@ -41,7 +37,7 @@ class MultiLogger(ExperimentLogger):
         else:
             os.makedirs(os.path.join(self.exp_path, 'models'))
             os.makedirs(os.path.join(self.exp_path, 'results'))
-            os.makedirs(os.path.join(self.exp_path, 'figures'))
+            os.makedirs(os.path.join(self.exp_path, 'features'))
 
         self.save_models = save_models
         self.loggers = []
@@ -59,15 +55,13 @@ class MultiLogger(ExperimentLogger):
         for l in self.loggers:
             l.log_args(args)
 
-    def log_result(self, array, name, step):
+    def log_result(self, array, name):
         for l in self.loggers:
-            l.log_result(array, name, step)
-
-    def log_figure(self, name, iter, figure, curtime=None):
-        if curtime is None:
-            curtime = datetime.now()
+            l.log_result(array, name)
+    
+    def save_PIL(self, state_dict, task, prefix="features"):
         for l in self.loggers:
-            l.log_figure(name, iter, figure, curtime)
+            l.save_PIL(state_dict, task, prefix)
 
     def save_model(self, state_dict, task):
         if self.save_models:

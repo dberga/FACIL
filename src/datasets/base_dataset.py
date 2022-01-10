@@ -1,26 +1,27 @@
+import numpy as np
 import os
 import random
-import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 
 
 class BaseDataset(Dataset):
-    """Characterizes a dataset for PyTorch -- this dataset pre-loads all paths in memory"""
+    'Characterizes a dataset for PyTorch'
 
-    def __init__(self, data, transform, class_indices=None):
-        """Initialization"""
+    def __init__(self, data, transform, offset=0, class_indices=None):
+        'Initialization'
         self.labels = data['y']
         self.images = data['x']
         self.transform = transform
+        self.offset = offset
         self.class_indices = class_indices
 
     def __len__(self):
-        """Denotes the total number of samples"""
+        'Denotes the total number of samples'
         return len(self.images)
 
     def __getitem__(self, index):
-        """Generates one sample of data"""
+        'Generates one sample of data'
         x = Image.open(self.images[index]).convert('RGB')
         x = self.transform(x)
         y = self.labels[index]
@@ -28,8 +29,6 @@ class BaseDataset(Dataset):
 
 
 def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_order=None):
-    """Prepare data: dataset splits, task partition, class order"""
-
     data = {}
     taskcla = []
 
@@ -42,6 +41,7 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
     else:
         num_classes = len(class_order)
         class_order = class_order.copy()
+
     if shuffle_classes:
         np.random.shuffle(class_order)
 
@@ -53,7 +53,7 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
     else:
         assert nc_first_task < num_classes, "first task wants more classes than exist"
         remaining_classes = num_classes - nc_first_task
-        assert remaining_classes >= (num_tasks - 1), "at least one class is needed per task"  # better minimum 2
+        assert remaining_classes >= (num_tasks - 1), "at least one class is needed per task"  # we might need 2
         cpertask = np.array([nc_first_task] + [remaining_classes // (num_tasks - 1)] * (num_tasks - 1))
         for i in range(remaining_classes % (num_tasks - 1)):
             cpertask[i + 1] += 1
@@ -72,8 +72,8 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
 
     # ALL OR TRAIN
     for this_image, this_label in trn_lines:
-        if not os.path.isabs(this_image):
-            this_image = os.path.join(path, this_image)
+        #if not os.path.isabs(this_image):
+            #this_image = os.path.join(path, this_image)
         this_label = int(this_label)
         if this_label not in class_order:
             continue
@@ -87,8 +87,8 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
 
     # ALL OR TEST
     for this_image, this_label in tst_lines:
-        if not os.path.isabs(this_image):
-            this_image = os.path.join(path, this_image)
+        #if not os.path.isabs(this_image):
+        #    this_image = os.path.join(path, this_image)
         this_label = int(this_label)
         if this_label not in class_order:
             continue
@@ -100,12 +100,12 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
         data[this_task]['tst']['x'].append(this_image)
         data[this_task]['tst']['y'].append(this_label - init_class[this_task])
 
-    # check classes
+    # Check classes
     for tt in range(num_tasks):
         data[tt]['ncla'] = len(np.unique(data[tt]['trn']['y']))
         assert data[tt]['ncla'] == cpertask[tt], "something went wrong splitting classes"
 
-    # validation
+    # Validation
     if validation > 0.0:
         for tt in data.keys():
             for cc in range(data[tt]['ncla']):
@@ -118,7 +118,7 @@ def get_data(path, num_tasks, nc_first_task, validation, shuffle_classes, class_
                     data[tt]['trn']['x'].pop(rnd_img[ii])
                     data[tt]['trn']['y'].pop(rnd_img[ii])
 
-    # other
+    # Others
     n = 0
     for t in data.keys():
         taskcla.append((t, data[t]['ncla']))

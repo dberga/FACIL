@@ -5,11 +5,13 @@ from datasets.memory_dataset import MemoryDataset
 
 
 class ExemplarsDataset(MemoryDataset):
-    """Exemplar storage for approaches with an interface of Dataset"""
+    """
+    Exemplar storage for approaches with an interface of Dataset.
+    """
 
     def __init__(self, transform, class_indices,
                  num_exemplars=0, num_exemplars_per_class=0, exemplar_selection='random'):
-        super().__init__({'x': [], 'y': []}, transform, class_indices=class_indices)
+        super().__init__({'x': [], 'y': []}, transform, offset=0, class_indices=class_indices)
         self.max_num_exemplars_per_class = num_exemplars_per_class
         self.max_num_exemplars = num_exemplars
         assert (num_exemplars_per_class == 0) or (num_exemplars == 0), 'Cannot use both limits at once!'
@@ -22,13 +24,10 @@ class ExemplarsDataset(MemoryDataset):
     def extra_parser(args):
         parser = ArgumentParser("Exemplars Management Parameters")
         _group = parser.add_mutually_exclusive_group()
-        _group.add_argument('--num-exemplars', default=0, type=int, required=False,
-                            help='Fixed memory, total number of exemplars (default=%(default)s)')
-        _group.add_argument('--num-exemplars-per-class', default=0, type=int, required=False,
-                            help='Growing memory, number of exemplars per class (default=%(default)s)')
-        parser.add_argument('--exemplar-selection', default='random', type=str,
-                            choices=['herding', 'random', 'entropy', 'distance'],
-                            required=False, help='Exemplar selection strategy (default=%(default)s)')
+        _group.add_argument('--num_exemplars', default=0, type=int, required=False, help='(default=%(default)s)')
+        _group.add_argument('--num_exemplars_per_class', default=0, type=int, required=False, help='(default=%(default)s)')
+        parser.add_argument('--exemplar_selection', default='random', type=str, choices=['herding', 'random', 'entropy', 'distance'],
+                            required=False, help='(default=%(default)s)')
         return parser.parse_known_args(args)
 
     def _is_active(self):
