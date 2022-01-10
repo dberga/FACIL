@@ -1,7 +1,7 @@
 <div align="center">
 
-#Disentanglement of Color and Shape for CL using the Framework for Analysis of Class-Incremental Learning (FACIL)
-
+# Disentanglement of Color and Shape for CL using the Framework for Analysis of Class-Incremental Learning (FACIL)
+[![](https://i.ytimg.com/vi/NZLIm0uPKEY/hqdefault.jpg)](https://www.youtube.com/watch?v=NZLIm0uPKEY)
 ---
 
 <p align="center">
@@ -25,6 +25,7 @@ CL-ICML paper:
 _**Disentanglement of Color and Shape Representations for Continual Learning**_  
 *David Berga, Marc Masana, Joost van de Weijer*  
 ([arxiv](https://arxiv.org/abs/2007.06356))
+([CL-ICML 2020](https://sites.google.com/view/cl-icml/accepted-papers))
 
 ## Example execution scripts
 
