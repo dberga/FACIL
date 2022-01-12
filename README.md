@@ -160,9 +160,10 @@ If you want to cite the framework / code feel free to use this preprint citation
   year={2020}
 }
 @article{berga2020disentanglement,
-  title={Class-incremental learning: survey and performance evaluation},
+  title={Disentanglement of Color and Shape Representations for Continual Learning},
   author={Berga, David and Masana, Marc and van de Weijer, Joost},
-  journal={arXiv preprint arXiv:2007.06356},
+  journal={Proceedings of the 37 th International Conference on Machine
+Learning, Workshop on Continual Learning (CL-ICML)},
   year={2020}
 }
 ```
